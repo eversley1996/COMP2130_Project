@@ -6,6 +6,7 @@
 #include <string.h>	/* memset warnings */
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <sys/select.h>
 
 #define BUF_SIZE	1024
 #define LISTEN_PORT	60000
