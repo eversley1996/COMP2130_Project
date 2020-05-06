@@ -14,6 +14,7 @@
 #include <string.h>	/* memset warnings */
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <sys/select.h>
 
 void displayMenu();
 void sendSvrMessage();
