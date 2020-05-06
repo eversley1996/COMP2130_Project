@@ -72,7 +72,6 @@ int main(int argc, char *argv[]){
             sendMessage();
             printf("%s\n",recvMessage());
         }
-
     }
 
     close(sock_recv);
