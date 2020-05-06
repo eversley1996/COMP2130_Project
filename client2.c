@@ -5,7 +5,6 @@
     Ramone Grantson
 
 */
-
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -18,16 +17,20 @@
 
 void displayMenu();
 void sendSvrMessage();
-void recvSvrMessage();
+int recvSvrMessage();
+void decodeMessage();
+int encodeMessage();
 
 #define BUF_SIZE	1024
 #define SERVER_IP	"127.0.0.1"
 #define	SERVER_PORT	60000
+#define DELIMITER "-"
 
 int			sock_send,option;
 struct sockaddr_in	addr_send,my_addr;
 char			text[80],src_ip[30],buf[BUF_SIZE];
 int			send_len,bytes_sent,bytes_recv, recv_len;
+char userName[30], command[30];
         
 int main(int argc, char *argv[]){
 
@@ -57,51 +60,59 @@ int main(int argc, char *argv[]){
     addr_send.sin_addr.s_addr = inet_addr(SERVER_IP);
     addr_send.sin_port = htons((unsigned short)SERVER_PORT);
 
-    
+    printf("Welcome to IM Pro ! \n");
+    printf("Please enter a name to use: => ");
+    scanf("%s",&userName);
+
+    if(strlen(userName) < 2){
+        printf("Cannot use this appplication without a valid name. Goodbye \n");
+        close(sock_send);
+        exit(0);
+    }
+
+    printf("Please select an option:\n");
+    displayMenu();
+    printf("=> ");
+    scanf("%d",&option);
+
     while(1){
-        printf("Welcome to IM Pro ! \n");
-        printf("Please select an option:\n");
-        displayMenu();
-        scanf("%d",&option);
+        
         switch(option){
             case 0:
                 strcpy(text,"shutdown");
-                strcpy(buf,text);
+                strcpy(command,"Display");
                 sendSvrMessage();
                 printf("Goodbye !\n");
                 close(sock_send);
                 exit(0);
                 break;
             case 1:
-                strcpy(text,"Register");
-                strcpy(buf,text);
+                strcpy(command,"Register");
+                strcpy(text,userName);
                 sendSvrMessage();
-
-                //Wait on response from server
-                recvSvrMessage();
-                scanf("%s",&text);
-                strcpy(buf,text);
-                sendSvrMessage();
-                recvSvrMessage();
                 break;
+
             
             default:
                 printf("Incorrect option given !\n");
                 break;
         }
 
-    
-        //recv_len=sizeof(my_addr);
-        //bytes_recv=recvfrom(sock_send,buf,BUF_SIZE,0,(struct sockaddr *)&my_addr,&recv_len);
-        //if (bytes_recv>0){	/* what was sent? */
-        //        buf[bytes_recv]='\0';
-        //        printf("From %s: received: %s\n",inet_ntoa(addr_send.sin_addr),buf);
-        //}
-        
+        if(recvSvrMessage() == 0){ //Check if a msg was received
+            decodeMessage();
+        }
+
+        if (strcmp(command,"Display") == 0){
+            printf("\nMessage Received: %s\n \n",text);
+        }
+
+        printf("Please select an option:\n");
+        displayMenu();
+        printf("=> ");
+        scanf("%d",&option);
     }
 
 
-    
 }
 
 void displayMenu(){
@@ -109,16 +120,34 @@ void displayMenu(){
 }
 
 void sendSvrMessage(){
-    send_len=strlen(text);
+    send_len=encodeMessage();
     bytes_sent=sendto(sock_send, buf, send_len, 0,(struct sockaddr *) &addr_send, sizeof(addr_send));
 
 }
 
-void recvSvrMessage(){
+int recvSvrMessage(){ //Return 1 if no message was received
     recv_len=sizeof(my_addr);
     bytes_recv=recvfrom(sock_send,buf,BUF_SIZE,0,(struct sockaddr *)&my_addr,&recv_len);
     if (bytes_recv>0){	/* what was sent? */
         buf[bytes_recv]='\0';
-        printf("From %s: received: %s\n",inet_ntoa(addr_send.sin_addr),buf);
+        return 0;
+        //printf("From %s: received: %s\n",inet_ntoa(addr_send.sin_addr),buf);
+    }else{
+        return 1;
     }
+}
+
+// Message format: command-message
+int encodeMessage(){
+    strcpy(buf,command);
+    strcat(buf,DELIMITER);
+    strcat(buf,text);
+    
+
+    return (strlen(command) + strlen(text) + (strlen(DELIMITER) * 3)); //Return length of string to be sent
+}
+
+void decodeMessage(){
+    strcpy(command,strtok(buf, DELIMITER));      /* Get the command (first message)*/
+    strcpy(text,strtok(NULL, DELIMITER));    /* Get the message*/
 }

@@ -7,12 +7,28 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/select.h>
+#include <stdbool.h>
 
 #define BUF_SIZE	1024
 #define LISTEN_PORT	60000
+#define DELIMITER "-"
 
 const char* recvMessage();
 void sendMessage();
+int encodeMessage();
+void decodeMessage();
+int newUserPosition();
+
+typedef struct {
+    
+   struct   sockaddr_in socket;
+   char     ip[20];
+   char     name[30];
+   bool      WorkGroup;
+   bool      FunGroup;
+} UserInfo;
+
+UserInfo userList[10] = {0};
 
 int sent_msg,send_len;
 int			sock_recv;
@@ -23,8 +39,8 @@ struct timeval		timeout={0,0};
 int			incoming_len;
 struct sockaddr_in	remote_addr;
 int			recv_msg_size;
-char			buf[BUF_SIZE];
-int			select_ret;
+char		buf[BUF_SIZE], text[30], command[30];
+int			select_ret, user_index;
 
 int main(int argc, char *argv[]){
     
@@ -62,18 +78,39 @@ int main(int argc, char *argv[]){
 
             recvMessage();    
         }
-        
-        if (strcmp(buf,"shutdown") == 0)
+
+        decodeMessage(); //Get the message and the command
+
+        if (strcmp(text,"shutdown") == 0)
             break;
 
-        if (strcmp(buf,"Register")==0){
-            strcpy(buf,"Enter yours Name:");
+        if (strcmp(command,"Register")==0){
+            //write code to register name stored in "text"
+            strcpy(command,"Display");
+
+            if(newUserPosition() >= 0){
+                strcpy(userList[i].ip,inet_ntoa(remote_addr.sin_addr));
+                strcpy(userList[i].name,text);
+                userList[i].WorkGroup = false;
+                userList[i].FunGroup = false;
+                userList[i].socket = remote_addr;
+
+                printf("New User Added: %s at %s\n",userList[i].name,userList[i].ip);
+                strcpy(text,"User Registered");//Message to be send back to client
+            }else{
+                strcpy(text,"No Space,cannot register user");
+
+            }
+            
+            
             sendMessage();
-            printf("%s\n",recvMessage());
+            //printf("%s\n",recvMessage());
         }
     }
 
     close(sock_recv);
+
+    return 0;
 }
 
 const char* recvMessage(){
@@ -81,7 +118,7 @@ const char* recvMessage(){
     recv_msg_size=recvfrom(sock_recv,buf,BUF_SIZE,0,(struct sockaddr *)&remote_addr,&incoming_len);
     if (recv_msg_size > 0){	/* what was sent? */
         buf[recv_msg_size]='\0';
-        printf("From %s: received: %s\n",inet_ntoa(remote_addr.sin_addr),buf);
+        printf("From %s received: %s\n",inet_ntoa(remote_addr.sin_addr),buf);
         //strcpy(msg,buf);
         return buf;
     }else{
@@ -91,6 +128,30 @@ const char* recvMessage(){
 }
 
 void sendMessage(){
-    send_len= strlen(buf);
+    send_len= encodeMessage();
     sent_msg=sendto(sock_recv, buf, send_len, 0,(struct sockaddr *) &remote_addr, sizeof(remote_addr));
+}
+
+//Format: command-message
+void decodeMessage(){
+    strcpy(command,strtok(buf, DELIMITER));      /* Get the command (first message)*/
+    strcpy(text,strtok(NULL, DELIMITER));    /* Get the message*/
+}
+
+//Format: command-message
+int encodeMessage(){
+    strcpy(buf,command);
+    strcat(buf,DELIMITER);
+    strcat(buf,text);
+
+    return (strlen(command) + strlen(text) + (strlen(DELIMITER) * 3)); //Return length of string to be sent
+}
+
+int newUserPosition(){
+    for (int i=0; i<10; i++){
+        if(strcmp(userList[i].ip,"") == 0){
+            return i;
+        }
+    }
+    return -1;
 }
