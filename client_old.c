@@ -33,6 +33,7 @@ Acknowledgements:   Code in this project was based on:
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <ctype.h>
+#include <sys/select.h>
 
 #define BUF_SIZE	1024
 #define SERVER_IP	"127.0.0.1"
