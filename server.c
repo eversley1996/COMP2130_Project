@@ -28,8 +28,6 @@ int			select_ret;
 
 int main(int argc, char *argv[]){
     
-
-    //printf("Hi\n");
             /* create socket for receiving */
     sock_recv=socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (sock_recv < 0){
