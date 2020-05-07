@@ -18,6 +18,7 @@ void sendMessage();
 int encodeMessage();
 void decodeMessage();
 int newUserPosition();
+void viewAllUsers(char *text);
 
 typedef struct {
     
@@ -39,8 +40,9 @@ struct timeval		timeout={0,0};
 int			incoming_len;
 struct sockaddr_in	remote_addr;
 int			recv_msg_size;
-char		buf[BUF_SIZE], text[30], command[30];
+char		buf[BUF_SIZE], text[1024], command[30];
 int			select_ret, user_index;
+bool userFound;
 
 int main(int argc, char *argv[]){
     
@@ -62,50 +64,77 @@ int main(int argc, char *argv[]){
         exit(0);
     }
     
-    FD_ZERO(&readfds);		/* zero out socket set */
-    FD_SET(sock_recv,&readfds);	/* add socket to listen to */
-        /* listen ... */
+
+    /* listen ... */
     while (1){
         FD_ZERO(&readfds);		/* zero out socket set */
         FD_SET(sock_recv,&readfds);	/* add socket to listen to */
         
-        printf("Server listening...\n");
-        read_fd_set = active_fd_set;
-        select_ret=select(sock_recv+1,&readfds,NULL,NULL,NULL);
-        /*select_ret=select(sock_recv+1,&readfds,NULL,NULL,&timeout);*/
+        if(FD_ISSET(sock_recv,&readfds)){
+            printf("Server listening...\n");
+            read_fd_set = active_fd_set;
+            select_ret=select(sock_recv+1,&readfds,NULL,NULL,NULL);
+            /*select_ret=select(sock_recv+1,&readfds,NULL,NULL,&timeout);*/
 
-        if (select_ret > 0){/* anything arrive on any socket? */
+            if (select_ret > 0){/* anything arrive on any socket? */
 
-            recvMessage();    
-        }
+                recvMessage();    
+            }
 
-        decodeMessage(); //Get the message and the command
+            decodeMessage(); //Get the message and the command
 
-        if (strcmp(text,"shutdown") == 0)
-            break;
+            if (strcmp(text,"shutdown") == 0)
+                break;
 
-        if (strcmp(command,"Register")==0){
-            //write code to register name stored in "text"
-            strcpy(command,"Display");
+            if (strcmp(command,"Register")==0){
+                //write code to register name stored in "text"
+                strcpy(command,"Display");
 
-            if(newUserPosition() >= 0){
-                strcpy(userList[i].ip,inet_ntoa(remote_addr.sin_addr));
-                strcpy(userList[i].name,text);
-                userList[i].WorkGroup = false;
-                userList[i].FunGroup = false;
-                userList[i].socket = remote_addr;
+                if(newUserPosition() >= 0){
+                    strcpy(userList[i].ip,inet_ntoa(remote_addr.sin_addr));
+                    strcpy(userList[i].name,text);
+                    userList[i].WorkGroup = false;
+                    userList[i].FunGroup = false;
+                    userList[i].socket = remote_addr;
 
-                printf("New User Added: %s at %s\n",userList[i].name,userList[i].ip);
-                strcpy(text,"User Registered");//Message to be send back to client
-            }else{
-                strcpy(text,"No Space,cannot register user");
+                    printf("New User Added: %s at %s\n",userList[i].name,userList[i].ip);
+                    strcpy(text,"User Registered");//Message to be send back to client
+
+                    for(int j=0; j<10; j++){
+                        if(strcmp(userList[j].name,"") !=0)
+                            printf("%s\n",userList[j].name);
+                    }
+                }else{
+                    strcpy(text,"No Space,cannot register user");
+
+                }
+                sendMessage();
+                //printf("%s\n",recvMessage());
+            }
+
+            if (strcmp(command,"ViewAllContacts")==0){
+
+                //Check if user is registered
+                for (int x=0; x<10;x++){
+                    if(strcmp(userList[x].name,text) == 0){
+                        userFound=true;
+                        break; //Stop looking if user found
+                    }
+                }
+                
+                if(userFound){
+                    strcpy(text,"\n\nList of Users: \n");//Ensure string is blank
+                    viewAllUsers(text);
+                }else{
+                    strcpy(text,"You must register before viewing contacts ! \n");
+                }
+
+                strcpy(command,"Display");
+                sendMessage();
 
             }
-            
-            
-            sendMessage();
-            //printf("%s\n",recvMessage());
         }
+        
     }
 
     close(sock_recv);
@@ -149,9 +178,21 @@ int encodeMessage(){
 
 int newUserPosition(){
     for (int i=0; i<10; i++){
-        if(strcmp(userList[i].ip,"") == 0){
+        if(strcmp(userList[i].name,"") == 0){
             return i;
         }
     }
     return -1;
+}
+
+void viewAllUsers(char *text){
+
+    memset(text,0,sizeof(text)); //Ensure string is blank
+    
+    for (i=0;i < 10; i++){
+        if (strcmp(userList[i].name, "") != 0){
+            sprintf(&text[strlen(text)], "%d: %s\n",i+1,userList[i].name);
+        }
+    }
+    printf("Available Users: %s\n",text);
 }

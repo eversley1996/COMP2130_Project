@@ -28,7 +28,7 @@ int encodeMessage();
 
 int			sock_send,option;
 struct sockaddr_in	addr_send,my_addr;
-char			text[80],src_ip[30],buf[BUF_SIZE];
+char			text[1024],src_ip[30],buf[BUF_SIZE];
 int			send_len,bytes_sent,bytes_recv, recv_len;
 char userName[30], command[30];
         
@@ -88,6 +88,11 @@ int main(int argc, char *argv[]){
                 break;
             case 1:
                 strcpy(command,"Register");
+                strcpy(text,userName);
+                sendSvrMessage();
+                break;
+            case 2:
+                strcpy(command,"ViewAllContacts");
                 strcpy(text,userName);
                 sendSvrMessage();
                 break;
