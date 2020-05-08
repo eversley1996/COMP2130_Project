@@ -27,6 +27,8 @@ void sendSvrMessage();
 int recvSvrMessage();
 void decodeMessage();
 int encodeMessage();
+void getInput();
+void registerUser();
 
 #define BUF_SIZE	1024
 #define SERVER_IP	"127.0.0.1"
@@ -37,7 +39,12 @@ int			sock_send,option;
 struct sockaddr_in	addr_send,my_addr;
 char			text[1024],src_ip[30],buf[BUF_SIZE];
 int			send_len,bytes_sent,bytes_recv, recv_len;
-char userName[30], command[30];
+char userName[30], command[30],name[30];
+int select_ret;
+fd_set readfds;
+char textReply[1024];
+
+
         
 int main(int argc, char *argv[]){
 
@@ -67,68 +74,115 @@ int main(int argc, char *argv[]){
     addr_send.sin_addr.s_addr = inet_addr(SERVER_IP);
     addr_send.sin_port = htons((unsigned short)SERVER_PORT);
 
-    printf("Welcome to IM Pro ! \n");
-    printf("Please enter a name to use: => ");
-    scanf("%s",&userName);
+    FD_ZERO(&readfds);
+    FD_SET(sock_send,&readfds);
 
-    if(strlen(userName) < 2){
-        printf("Cannot use this appplication without a valid name. Goodbye \n");
-        close(sock_send);
-        exit(0);
-    }
-
-    printf("Please select an option:\n");
-    displayMenu();
-    printf("=> ");
-    scanf("%d",&option);
+    //Register User
+    registerUser();
+    
+    getInput();
 
     while(1){
-        
         switch(option){
-            case 0:
+            case 1:
                 strcpy(text,"shutdown");
                 strcpy(command,"Display");
+                strcpy(name,userName);
                 sendSvrMessage();
                 printf("Goodbye !\n");
                 close(sock_send);
                 exit(0);
-                break;
-            case 1:
-                strcpy(command,"Register");
-                strcpy(text,userName);
-                sendSvrMessage();
-                break;
+                break;    
             case 2:
                 strcpy(command,"ViewAllContacts");
                 strcpy(text,userName);
+                strcpy(name,userName);
                 sendSvrMessage();
                 break;
-
-            
+            case 3:
+                printf("Are you sure you want to join FunGroup? (yes/no) =>");
+                scanf("%s",&textReply);
+                if(strcmp(textReply,"yes")==0){
+                    strcpy(command,"JoinGroup");
+                    strcpy(text,"FunGroup");
+                    strcpy(name,userName);
+                    sendSvrMessage();
+                }else{
+                    strcpy(command,"CancelRequest");
+                    strcpy(text,"Cancel Request");
+                    strcpy(name,userName);
+                    sendSvrMessage();
+                }
+                break;
+            case 4:
+                printf("Are you sure you want to join WorkGroup? (yes/no) =>");
+                scanf("%s",&textReply);
+                if(strcmp(textReply,"yes")==0){
+                    strcpy(command,"JoinGroup");
+                    strcpy(text,"WorkGroup");
+                    strcpy(name,userName);
+                    sendSvrMessage();
+                }else{
+                    strcpy(command,"CancelRequest");
+                    strcpy(text,"Cancel Request");
+                    strcpy(name,userName);
+                    sendSvrMessage();
+                }
+                break;
+            case 5:
+                printf("\nEnter broadcast message => ");
+                scanf("%s",&textReply);
+                strcpy(command,"FunGroupBroadcast");
+                strcpy(text,textReply);
+                strcpy(name,userName);
+                sendSvrMessage();
+                break;
             default:
                 printf("Incorrect option given !\n");
+                close(sock_send);
+                exit(0);
                 break;
         }
-
-        if(recvSvrMessage() == 0){ //Check if a msg was received
+        
+        if (recvSvrMessage() == 0){ //Check if a msg was received
             decodeMessage();
+            if (strcmp(command,"Display") == 0){
+                printf("\nMessage Received: %s\n \n",text);
+
+                if(strcmp(text,"Name already exists")==0){// Check if register name already exists
+                    close(sock_send);
+                    exit(0);
+                }
+            }
+
+            if(strcmp(command,"FunGroupBroadcast") ==0){
+                //write code
+                printf("\nFunGroup Broadcast: %s\n",text);
+            }
+
+            if(strcmp(command,"WorkGroupBroadcast") ==0){
+                //write code
+            }
         }
 
-        if (strcmp(command,"Display") == 0){
-            printf("\nMessage Received: %s\n \n",text);
-        }
+        strcpy(command,"");//Ensures same command is not used during next cycle
 
-        printf("Please select an option:\n");
-        displayMenu();
-        printf("=> ");
-        scanf("%d",&option);
+        
+        getInput();   
     }
-
 
 }
 
 void displayMenu(){
-    printf("0: Quit \n1: Register\n2: View Contacts\n");
+    printf("\n1: Quit \n2: View Contacts\n3: Join FunGroup\n4: Join Workgroup\n");
+    printf("5: Send FunGroup Broadcast\n6: Send WorkGroup Broadcast\n");
+}
+
+void getInput(){
+    printf("\nPlease select an option:\n");
+    displayMenu();
+    printf("=> ");
+    scanf("%d",&option);
 }
 
 void sendSvrMessage(){
@@ -149,17 +203,46 @@ int recvSvrMessage(){ //Return 1 if no message was received
     }
 }
 
-// Message format: command-message
+// Message format: command-message-name
 int encodeMessage(){
     strcpy(buf,command);
     strcat(buf,DELIMITER);
     strcat(buf,text);
+    strcat(buf,DELIMITER);
+    strcat(buf,name);
     
 
-    return (strlen(command) + strlen(text) + (strlen(DELIMITER) * 3)); //Return length of string to be sent
+    return (strlen(command) + strlen(text) + strlen(name)+(strlen(DELIMITER) * 3)); //Return length of string to be sent
 }
 
+//Message format: command-message
 void decodeMessage(){
     strcpy(command,strtok(buf, DELIMITER));      /* Get the command (first message)*/
     strcpy(text,strtok(NULL, DELIMITER));    /* Get the message*/
+}
+
+void registerUser(){
+    printf("\n**** Welcome to IM Pro ****\n");
+    printf("\nPlease enter a name to use: => ");
+    scanf("%s",&userName);
+
+    if(strlen(userName) < 2){
+        printf("\nCannot use this appplication without a valid name. Goodbye \n");
+        close(sock_send);
+        exit(0);
+    }
+
+    strcpy(command,"Register");
+    strcpy(text,userName);
+    strcpy(name,userName);
+    sendSvrMessage();
+
+    if(recvSvrMessage()==0){
+        decodeMessage();
+        printf("\nMessage Received: %s\n \n",text);
+    }else{
+        printf("\nError, no response from server\n");
+        close(sock_send);
+        exit(0);
+    }
 }

@@ -55,24 +55,28 @@ struct timeval		timeout={0,0};
 int			incoming_len;
 struct sockaddr_in	remote_addr;
 int			recv_msg_size;
-char		buf[BUF_SIZE], text[1024], command[30];
+char		buf[BUF_SIZE], text[1024],test[1024], command[30], name[50];
 int			select_ret, user_index;
 bool userFound;
+FILE *fptr;
 
 int main(int argc, char *argv[]){
     
-            /* create socket for receiving */
+    /* create socket for receiving */
     sock_recv=socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
     if (sock_recv < 0){
         printf("socket() failed\n");
         exit(0);
     }
-        /* make local address structure */
+    
+    /* make local address structure */
     memset(&my_addr, 0, sizeof (my_addr));	/* zero out structure */
     my_addr.sin_family = AF_INET;	/* address family */
     my_addr.sin_addr.s_addr = htonl(INADDR_ANY);  /* current machine IP */
     my_addr.sin_port = htons((unsigned short)LISTEN_PORT);
-        /* bind socket to the local address */
+    
+    /* bind socket to the local address */
     i=bind(sock_recv, (struct sockaddr *) &my_addr, sizeof (my_addr));
     if (i < 0){
         printf("binding() failed\n");
@@ -84,72 +88,145 @@ int main(int argc, char *argv[]){
     while (1){
         FD_ZERO(&readfds);		/* zero out socket set */
         FD_SET(sock_recv,&readfds);	/* add socket to listen to */
+
+        printf("Server listening...\n");
+        read_fd_set = active_fd_set;
+        
+        select_ret=select(sock_recv+1,&readfds,NULL,NULL,NULL);
         
         if(FD_ISSET(sock_recv,&readfds)){
-            printf("Server listening...\n");
-            read_fd_set = active_fd_set;
-            select_ret=select(sock_recv+1,&readfds,NULL,NULL,NULL);
-            /*select_ret=select(sock_recv+1,&readfds,NULL,NULL,&timeout);*/
-
+    
             if (select_ret > 0){/* anything arrive on any socket? */
+                recvMessage();
+                decodeMessage(); //Get the message and the command
 
-                recvMessage();    
-            }
+                if (strcmp(text,"shutdown") == 0)
+                    break;
 
-            decodeMessage(); //Get the message and the command
+                if (strcmp(command,"Register")==0){ 
+                    //write code to register name stored in "text"
+                    strcpy(command,"Display");
+                    strcpy(test,"");
 
-            if (strcmp(text,"shutdown") == 0)
-                break;
-
-            if (strcmp(command,"Register")==0){
-                //write code to register name stored in "text"
-                strcpy(command,"Display");
-
-                if(newUserPosition() >= 0){
-                    strcpy(userList[i].ip,inet_ntoa(remote_addr.sin_addr));
-                    strcpy(userList[i].name,text);
-                    userList[i].WorkGroup = false;
-                    userList[i].FunGroup = false;
-                    userList[i].socket = remote_addr;
-
-                    printf("New User Added: %s at %s\n",userList[i].name,userList[i].ip);
-                    strcpy(text,"User Registered");//Message to be send back to client
-
-                    for(int j=0; j<10; j++){
-                        if(strcmp(userList[j].name,"") !=0)
-                            printf("%s\n",userList[j].name);
+                    for(int j=0; j<10; j++){// Check if name already exists
+                            if(strcmp(userList[j].name,text) ==0){
+                                strcpy(test,"Name already exists\n");
+                                break;
+                            }    
                     }
-                }else{
-                    strcpy(text,"No Space,cannot register user");
+                    if((newUserPosition() >= 0) && (strcmp(test,"")==0)){// Add user info to the list
+                        strcpy(userList[i].ip,inet_ntoa(remote_addr.sin_addr));
+                        strcpy(userList[i].name,text);
+                        userList[i].WorkGroup = false;
+                        userList[i].FunGroup = false;
+                        userList[i].socket = remote_addr;
 
-                }
-                sendMessage();
-                //printf("%s\n",recvMessage());
-            }
+                        strcpy(text,"User Registered");//Message to be send back to client
 
-            if (strcmp(command,"ViewAllContacts")==0){
+                        
+                    }else{
+                        if(strcmp(test,"")==0){
+                            strcpy(text,"No Space,cannot register user");
+                        }else{
+                            strcpy(text,test);
+                        }
+                        
 
-                //Check if user is registered
-                for (int x=0; x<10;x++){
-                    if(strcmp(userList[x].name,text) == 0){
-                        userFound=true;
-                        break; //Stop looking if user found
                     }
+                    sendMessage();
+                    
                 }
+
+                if (strcmp(command,"ViewAllContacts")==0){
                 
-                if(userFound){
                     strcpy(text,"\n\nList of Users: \n");//Ensure string is blank
                     viewAllUsers(text);
-                }else{
-                    strcpy(text,"You must register before viewing contacts ! \n");
+                    strcpy(command,"Display");
+                    sendMessage();
+
                 }
 
-                strcpy(command,"Display");
-                sendMessage();
+                if (strcmp(command,"CancelRequest")==0){
+                    strcpy(command,"Display");
+                    strcpy(text,"Request Cancelled\n");
+                    sendMessage();
+                }
 
-            }
-        }
-        
+                if (strcmp(command,"JoinGroup")==0){
+
+                    strcpy(command,"Display");// Change command for sending
+                    if(strcmp(text,"WorkGroup")==0){
+                        for (int x=0; x<10; x++){
+                            if(strcmp(userList[x].name,name)==0){ // "name" stores name of client
+                                userList[x].WorkGroup=true;
+                                strcpy(text,"Group request successful\n");
+                                sendMessage(); //Sends string stored in text variable
+                                break; //Dont bother checking the others
+                            }
+                        }
+                    }
+
+                    if(strcmp(text,"FunGroup")==0){
+                        for (int x=0; x<10; x++){
+                            if(strcmp(userList[x].name,name)==0){ // "name" stores name of client
+                                userList[x].FunGroup=true;
+                                strcpy(text,"Group request successful\n");
+                                sendMessage(); //Sends string stored in text variable
+                                break; //Dont bother checking the others
+                            }
+                        }
+                    }
+                    
+                
+                }
+
+                
+                if (strcmp(command,"FunGroupBroadcast")==0){
+                    
+                    userFound=false; 
+                    for(int x=0; x<10; x++){ //check if user is a group member
+                        if((strcmp(userList[x].name,name)==0) && userList[x].FunGroup==true){
+                            userFound=true;
+                            break;//Stop searching once found
+                        }
+                    }
+
+                    if(userFound){
+                        strcpy(test,text);// test temporarily holds the message
+                        strcpy(text,"FunGroup Broadcast sent\n");
+                        strcpy(command,"Display");
+                        sendMessage(); //Send confirmation
+
+                        /* This code sends the message to each member of group*/
+                        strcpy(text,""); //Ensure text is blank
+                        strcat(text,name);
+                        strcat(text,": ");
+                        strcat(text,test);
+                        strcpy(command,"FunGroupBroadcast");
+                        for(int j=0; j<10; j++){
+                            if(userList[j].FunGroup == true){
+                                send_len = encodeMessage();
+                                //Send to each user socket 
+                                sent_msg=sendto(sock_recv, buf, send_len, 0,(struct sockaddr *) &userList[j].socket, sizeof(userList[j].socket));
+                            }
+                        }
+
+                    }else{
+                        strcpy(text,"You must be a member before you broadcast.\n");
+                        sendMessage();
+                    }
+                    
+
+                }
+
+
+
+
+
+
+
+            }            
+        } 
     }
 
     close(sock_recv);
@@ -163,7 +240,6 @@ const char* recvMessage(){
     if (recv_msg_size > 0){	/* what was sent? */
         buf[recv_msg_size]='\0';
         printf("From %s received: %s\n",inet_ntoa(remote_addr.sin_addr),buf);
-        //strcpy(msg,buf);
         return buf;
     }else{
         strcpy(buf,"");
@@ -180,6 +256,7 @@ void sendMessage(){
 void decodeMessage(){
     strcpy(command,strtok(buf, DELIMITER));      /* Get the command (first message)*/
     strcpy(text,strtok(NULL, DELIMITER));    /* Get the message*/
+    strcpy(name,strtok(NULL, DELIMITER)); /*Get the name of recipient*/
 }
 
 //Format: command-message
