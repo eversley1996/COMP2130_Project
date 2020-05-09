@@ -74,15 +74,13 @@ int main(int argc, char *argv[]){
     addr_send.sin_addr.s_addr = inet_addr(SERVER_IP);
     addr_send.sin_port = htons((unsigned short)SERVER_PORT);
 
-    FD_ZERO(&readfds);
-    FD_SET(sock_send,&readfds);
-
     //Register User
     registerUser();
     
     getInput();
 
     while(1){
+
         switch(option){
             case 1:
                 strcpy(text,"shutdown");
@@ -117,6 +115,7 @@ int main(int argc, char *argv[]){
             case 4:
                 printf("Are you sure you want to join WorkGroup? (yes/no) =>");
                 scanf("%s",&textReply);
+                //fgets(textReply,BUF_SIZE,std) <-- Not working
                 if(strcmp(textReply,"yes")==0){
                     strcpy(command,"JoinGroup");
                     strcpy(text,"WorkGroup");
@@ -132,6 +131,7 @@ int main(int argc, char *argv[]){
             case 5:
                 printf("\nEnter broadcast message => ");
                 scanf("%s",&textReply);
+                //fgets(textReply,BUF_SIZE,std) <-- Not working
                 strcpy(command,"FunGroupBroadcast");
                 strcpy(text,textReply);
                 strcpy(name,userName);
@@ -156,16 +156,19 @@ int main(int argc, char *argv[]){
             }
 
             if(strcmp(command,"FunGroupBroadcast") ==0){
-                //write code
+                
                 printf("\nFunGroup Broadcast: %s\n",text);
             }
 
             if(strcmp(command,"WorkGroupBroadcast") ==0){
-                //write code
+                printf("\nWorkGroup Broadcast: %s\n",text);
             }
+        }else{
+            printf("No Message Received:");
         }
 
         strcpy(command,"");//Ensures same command is not used during next cycle
+        strcpy(text,"");
 
         
         getInput();   

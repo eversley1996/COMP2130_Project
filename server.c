@@ -82,6 +82,9 @@ int main(int argc, char *argv[]){
         printf("binding() failed\n");
         exit(0);
     }
+
+    FD_ZERO(&readfds);		/* zero out socket set */
+    FD_SET(sock_recv,&readfds);	/* add socket to listen to */
     
 
     /* listen ... */
@@ -90,11 +93,11 @@ int main(int argc, char *argv[]){
         FD_SET(sock_recv,&readfds);	/* add socket to listen to */
 
         printf("Server listening...\n");
-        read_fd_set = active_fd_set;
+        active_fd_set=readfds;
         
-        select_ret=select(sock_recv+1,&readfds,NULL,NULL,NULL);
+        select_ret=select(sock_recv+1,&active_fd_set,NULL,NULL,NULL);
         
-        if(FD_ISSET(sock_recv,&readfds)){
+        if(FD_ISSET(sock_recv,&active_fd_set)){
     
             if (select_ret > 0){/* anything arrive on any socket? */
                 recvMessage();
