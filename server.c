@@ -159,24 +159,36 @@ int main(int argc, char *argv[]){
 
                     strcpy(command,"Display");// Change command for sending
                     if(strcmp(text,"WorkGroup")==0){
+                        userFound=false;
                         for (int x=0; x<10; x++){
                             if(strcmp(userList[x].name,name)==0){ // "name" stores name of client
                                 userList[x].WorkGroup=true;
+                                userFound=true;
                                 strcpy(text,"Group request successful\n");
                                 sendMessage(); //Sends string stored in text variable
                                 break; //Dont bother checking the others
                             }
                         }
+                        if(userFound==false){
+                            strcpy(text,"Request unsucessful\n");
+                            sendMessage();
+                        }
                     }
 
                     if(strcmp(text,"FunGroup")==0){
+                        userFound=false;
                         for (int x=0; x<10; x++){
                             if(strcmp(userList[x].name,name)==0){ // "name" stores name of client
                                 userList[x].FunGroup=true;
+                                userFound=true;
                                 strcpy(text,"Group request successful\n");
                                 sendMessage(); //Sends string stored in text variable
                                 break; //Dont bother checking the others
                             }
+                        }
+                        if(userFound==false){
+                            strcpy(text,"Request unsucessful\n");
+                            sendMessage();
                         }
                     }
                     
@@ -195,8 +207,47 @@ int main(int argc, char *argv[]){
                     }
 
                     if(userFound){
-                        strcpy(test,text);// test temporarily holds the message
+                        strcpy(test,text);// test temporarily holds the message to be sent
                         strcpy(text,"FunGroup Broadcast sent\n");
+                        strcpy(command,"Display");
+                        sendMessage(); //Send confirmation back to client
+
+                        /* This code sends the message to each member of group*/
+                        strcpy(text,""); //Ensure text is blank
+                        strcat(text,name);
+                        strcat(text,": ");
+                        strcat(text,test);
+                        strcpy(command,"FunGroupBroadcast");
+
+                        for(int j=0; j<10; j++){//Check if they are apart of fungroup and send to the socket
+                            if(userList[j].FunGroup == true){
+                                send_len = encodeMessage();
+                                //Send to each user socket 
+                                sent_msg=sendto(sock_recv, buf, send_len, 0,(struct sockaddr *) &userList[j].socket, sizeof(userList[j].socket));
+                            }
+                        }
+
+                    }else{
+                        strcpy(text,"You must be a member before you broadcast.\n");
+                        sendMessage();
+                    }
+                    
+
+                }
+
+                if (strcmp(command,"WorkGroupBroadcast")==0){
+                    
+                    userFound=false; 
+                    for(int x=0; x<10; x++){ //check if user is a group member
+                        if((strcmp(userList[x].name,name)==0) && userList[x].WorkGroup==true){
+                            userFound=true;
+                            break;//Stop searching once found
+                        }
+                    }
+
+                    if(userFound){
+                        strcpy(test,text);// test temporarily holds the message to be sent
+                        strcpy(text,"WorkGroup Broadcast sent\n");
                         strcpy(command,"Display");
                         sendMessage(); //Send confirmation
 
@@ -205,7 +256,7 @@ int main(int argc, char *argv[]){
                         strcat(text,name);
                         strcat(text,": ");
                         strcat(text,test);
-                        strcpy(command,"FunGroupBroadcast");
+                        strcpy(command,"WorkGroupBroadcast");
                         for(int j=0; j<10; j++){
                             if(userList[j].FunGroup == true){
                                 send_len = encodeMessage();
@@ -224,9 +275,7 @@ int main(int argc, char *argv[]){
 
 
 
-
-
-
+                //CHECK FOR OThER COMMANDS HERE
 
             }            
         } 

@@ -22,6 +22,7 @@
 #include <arpa/inet.h>
 #include <sys/select.h>
 
+//Helper functions
 void displayMenu();
 void sendSvrMessage();
 int recvSvrMessage();
@@ -29,6 +30,7 @@ void decodeMessage();
 int encodeMessage();
 void getInput();
 void registerUser();
+void printMessages();
 
 #define BUF_SIZE	1024
 #define SERVER_IP	"127.0.0.1"
@@ -37,12 +39,13 @@ void registerUser();
 
 int			sock_send,option;
 struct sockaddr_in	addr_send,my_addr;
-char			text[1024],src_ip[30],buf[BUF_SIZE];
+char			text[BUF_SIZE],src_ip[30],buf[BUF_SIZE],filename[50];
 int			send_len,bytes_sent,bytes_recv, recv_len;
 char userName[30], command[30],name[30];
 int select_ret;
 fd_set readfds;
-char textReply[1024];
+char textReply[BUF_SIZE], message[200];
+FILE *fptr;
 
 
         
@@ -76,10 +79,22 @@ int main(int argc, char *argv[]){
 
     //Register User
     registerUser();
-    
+
+    //build filename
+    strcat(filename,userName);
+    strcat(filename,DELIMITER);
+    strcat(filename,"messages.txt");
+
+   
+
     getInput();
 
     while(1){
+        if((fptr=fopen(filename,"a")) == NULL){ // File stores messages from server
+            printf("File error! \n");
+            close(sock_send);
+            exit(0);
+        }
 
         switch(option){
             case 1:
@@ -88,6 +103,7 @@ int main(int argc, char *argv[]){
                 strcpy(name,userName);
                 sendSvrMessage();
                 printf("Goodbye !\n");
+                fclose(fptr);
                 close(sock_send);
                 exit(0);
                 break;    
@@ -138,40 +154,58 @@ int main(int argc, char *argv[]){
                 sendSvrMessage();
                 break;
             case 6:
+                printf("\nEnter broadcast message => ");
+                scanf("%s",&textReply);
+                //fgets(textReply,BUF_SIZE,std) <-- Not working
+                strcpy(command,"WorkGroupBroadcast");
+                strcpy(text,textReply);
+                strcpy(name,userName);
+                sendSvrMessage();
+                break;
+            case 7:
+                break;
+            case 8:
                 break;
             default:
                 printf("Incorrect option given !\n");
                 close(sock_send);
+                fclose(fptr);
                 exit(0);
                 break;
         }
         
+        
         if (recvSvrMessage() == 0){ //Check if a msg was received
             decodeMessage();
             if (strcmp(command,"Display") == 0){
-                printf("\nMessage Received: %s\n \n",text);
+                fprintf(fptr,"Message Received: %s\n",text);
 
                 if(strcmp(text,"Name already exists")==0){// Check if register name already exists
                     close(sock_send);
+                    fclose(fptr);
                     exit(0);
                 }
             }
 
             if(strcmp(command,"FunGroupBroadcast") ==0){
                 
-                printf("\nFunGroup Broadcast: %s\n",text);
+                fprintf(fptr,"FunGroup Broadcast: %s\n",text);
             }
 
             if(strcmp(command,"WorkGroupBroadcast") ==0){
-                printf("\nWorkGroup Broadcast: %s\n",text);
+                fprintf(fptr,"WorkGroup Broadcast: %s\n",text);
             }
         }else{
-            printf("No Message Received:");
+            printf("No Message Received:\n");
         }
+        fclose(fptr);
 
         strcpy(command,"");//Ensures old command is not used during next cycle
         strcpy(text,""); //Ensures old message is not shown
 
+
+        //Print messages written to file
+        printMessages();
         
         getInput();   
     }
@@ -179,8 +213,8 @@ int main(int argc, char *argv[]){
 }
 
 void displayMenu(){
-    printf("\n1: Quit \n2: View Contacts\n3: Join FunGroup\n4: Join Workgroup\n");
-    printf("5: Send FunGroup Broadcast\n6: Send WorkGroup Broadcast\n7: Display Messages\n8: Chat with someone\n");
+    printf("\n1: Exit App \n2: View Contacts\n3: Join FunGroup\n4: Join Workgroup\n");
+    printf("5: Send FunGroup Broadcast\n6: Send WorkGroup Broadcast\n7: Chat with someone\n");
 }
 
 void getInput(){
@@ -250,4 +284,23 @@ void registerUser(){
         close(sock_send);
         exit(0);
     }
+}
+
+void printMessages(){
+    if((fptr=fopen(filename,"r"))==NULL){
+        printf("Error opening file\n");
+        close(sock_send);
+        exit(0);
+    }
+
+    /*while(fgets(message,sizeof(message),fptr)){//Check for end of file
+        printf("\n%s\n",message);
+    }*/
+    printf("\n****Notifications:****\n");
+    while(fgets(message, sizeof(message), fptr) != NULL) {
+        fputs("\n",stdout);
+        fputs(message, stdout);
+    }
+
+    fclose(fptr);
 }
