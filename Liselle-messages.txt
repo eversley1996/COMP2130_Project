@@ -1,0 +1,6 @@
+Message Received: 
+Available Users:
+1: Feefa
+2: Liselle
+FunGroup Broadcast: You must be a member before you broadcast.
+

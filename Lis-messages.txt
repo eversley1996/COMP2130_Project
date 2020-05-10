@@ -1,0 +1,10 @@
+Message Received: Group request successful
+
+Message Received: 
+Available Users:
+1: Feefa
+2: Liselle
+3: Afeefah
+4: Lis
+Message Received: FunGroup Broadcast sent
+

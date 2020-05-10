@@ -92,7 +92,7 @@ int main(int argc, char *argv[]){
         FD_ZERO(&readfds);		/* zero out socket set */
         FD_SET(sock_recv,&readfds);	/* add socket to listen to */
 
-        printf("Server listening...\n");
+        printf("\nServer listening...\n");
         active_fd_set=readfds;
         
         select_ret=select(sock_recv+1,&active_fd_set,NULL,NULL,NULL);
@@ -117,12 +117,13 @@ int main(int argc, char *argv[]){
                                 break;
                             }    
                     }
-                    if((newUserPosition() >= 0) && (strcmp(test,"")==0)){// Add user info to the list
-                        strcpy(userList[i].ip,inet_ntoa(remote_addr.sin_addr));
-                        strcpy(userList[i].name,text);
-                        userList[i].WorkGroup = false;
-                        userList[i].FunGroup = false;
-                        userList[i].socket = remote_addr;
+                    int position= newUserPosition();// Find position in the array for new user
+                    if((position >= 0) && (strcmp(test,"")==0)){// Add user info to the list
+                        strcpy(userList[position].ip,inet_ntoa(remote_addr.sin_addr));
+                        strcpy(userList[position].name,text);
+                        userList[position].WorkGroup = false;
+                        userList[position].FunGroup = false;
+                        userList[position].socket = remote_addr;
 
                         strcpy(text,"User Registered");//Message to be send back to client
 
@@ -131,12 +132,11 @@ int main(int argc, char *argv[]){
                         if(strcmp(test,"")==0){
                             strcpy(text,"No Space,cannot register user");
                         }else{
-                            strcpy(text,test);
+                            strcpy(text,test);// Name exists
                         }
                         
-
                     }
-                    sendMessage();
+                    sendMessage();//Send message to client
                     
                 }
 
@@ -332,11 +332,13 @@ int newUserPosition(){
 void viewAllUsers(char *text){
 
     memset(text,0,sizeof(text)); //Ensure string is blank
-    
+    int number=1;
+    strcat(text,"\nAvailable Users:");
     for (i=0;i < 10; i++){
-        if (strcmp(userList[i].name, "") != 0){
-            sprintf(&text[strlen(text)], "%d: %s\n",i+1,userList[i].name);
+        if (strcmp(userList[i].ip, "") != 0){
+            sprintf(&text[strlen(text)], "\n%d: %s",number,userList[i].name);
+            number++;
         }
     }
-    printf("Available Users: %s\n",text);
-}
+    printf("%s",text);
+} 

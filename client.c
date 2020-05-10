@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/select.h>
+#include <stdbool.h>
 
 //Helper functions
 void displayMenu();
@@ -31,6 +32,7 @@ int encodeMessage();
 void getInput();
 void registerUser();
 void printMessages();
+void chatMenu();
 
 #define BUF_SIZE	1024
 #define SERVER_IP	"127.0.0.1"
@@ -46,6 +48,7 @@ int select_ret;
 fd_set readfds;
 char textReply[BUF_SIZE], message[200];
 FILE *fptr;
+bool notification;
 
 
         
@@ -84,8 +87,6 @@ int main(int argc, char *argv[]){
     strcat(filename,userName);
     strcat(filename,DELIMITER);
     strcat(filename,"messages.txt");
-
-   
 
     getInput();
 
@@ -163,8 +164,11 @@ int main(int argc, char *argv[]){
                 sendSvrMessage();
                 break;
             case 7:
+                chatMenu();
                 break;
             case 8:
+                printMessages();
+                getInput();
                 break;
             default:
                 printf("Incorrect option given !\n");
@@ -174,8 +178,8 @@ int main(int argc, char *argv[]){
                 break;
         }
         
-        
-        if (recvSvrMessage() == 0){ //Check if a msg was received
+
+        if ((recvSvrMessage() == 0)){ //Check if a msg was received
             decodeMessage();
             if (strcmp(command,"Display") == 0){
                 fprintf(fptr,"Message Received: %s\n",text);
@@ -195,11 +199,13 @@ int main(int argc, char *argv[]){
             if(strcmp(command,"WorkGroupBroadcast") ==0){
                 fprintf(fptr,"WorkGroup Broadcast: %s\n",text);
             }
+
         }else{
             printf("No Message Received:\n");
         }
+        
         fclose(fptr);
-
+        
         strcpy(command,"");//Ensures old command is not used during next cycle
         strcpy(text,""); //Ensures old message is not shown
 
@@ -214,7 +220,7 @@ int main(int argc, char *argv[]){
 
 void displayMenu(){
     printf("\n1: Exit App \n2: View Contacts\n3: Join FunGroup\n4: Join Workgroup\n");
-    printf("5: Send FunGroup Broadcast\n6: Send WorkGroup Broadcast\n7: Chat with someone\n");
+    printf("5: Send FunGroup Broadcast\n6: Send WorkGroup Broadcast\n7: Chat with someone\n8: Display Notifications\n");
 }
 
 void getInput(){
@@ -303,4 +309,8 @@ void printMessages(){
     }
 
     fclose(fptr);
+}
+
+void chatMenu(){
+    //Write code to handle chatting
 }
