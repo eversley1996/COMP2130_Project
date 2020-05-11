@@ -48,7 +48,7 @@ int select_ret;
 fd_set readfds;
 char textReply[BUF_SIZE], message[200];
 FILE *fptr;
-bool notification;
+
 
 
         
@@ -87,16 +87,11 @@ int main(int argc, char *argv[]){
     strcat(filename,userName);
     strcat(filename,DELIMITER);
     strcat(filename,"messages.txt");
-
+    
     getInput();
 
     while(1){
-        if((fptr=fopen(filename,"a")) == NULL){ // File stores messages from server
-            printf("File error! \n");
-            close(sock_send);
-            exit(0);
-        }
-
+        
         switch(option){
             case 1:
                 strcpy(text,"shutdown");
@@ -104,7 +99,6 @@ int main(int argc, char *argv[]){
                 strcpy(name,userName);
                 sendSvrMessage();
                 printf("Goodbye !\n");
-                fclose(fptr);
                 close(sock_send);
                 exit(0);
                 break;    
@@ -168,7 +162,10 @@ int main(int argc, char *argv[]){
                 break;
             case 8:
                 printMessages();
-                getInput();
+                strcpy(command,"NotificationRequest");
+                strcpy(text,"NotificationRequest");
+                strcpy(name,userName);
+                sendSvrMessage();
                 break;
             default:
                 printf("Incorrect option given !\n");
@@ -179,40 +176,46 @@ int main(int argc, char *argv[]){
         }
         
 
-        if ((recvSvrMessage() == 0)){ //Check if a msg was received
+        if ( recvSvrMessage()== 0){ //Check if a msg was received
             decodeMessage();
-            if (strcmp(command,"Display") == 0){
-                fprintf(fptr,"Message Received: %s\n",text);
 
-                if(strcmp(text,"Name already exists")==0){// Check if register name already exists
-                    close(sock_send);
-                    fclose(fptr);
-                    exit(0);
-                }
+            if((fptr=fopen(filename,"a")) == NULL){ // File stores messages from server
+                printf("File error! \n");
+                close(sock_send);
+                exit(0);
+            }
+
+            if (strcmp(command,"Display") == 0){
+                fprintf(fptr,"\nMessage Received: %s\n",text);
+                printf("\nMessage Received: %s\n",text);
+
             }
 
             if(strcmp(command,"FunGroupBroadcast") ==0){
                 
-                fprintf(fptr,"FunGroup Broadcast: %s\n",text);
+                fprintf(fptr,"\nFunGroup Broadcast: %s\n",text);
+                printf("\nFunGroup Broadcast: %s\n",text);
             }
 
             if(strcmp(command,"WorkGroupBroadcast") ==0){
                 fprintf(fptr,"WorkGroup Broadcast: %s\n",text);
+                printf("\nWorkGroup Broadcast: %s\n",text);
             }
 
+            if (strcmp(command,"NotificationReply")==0){
+                printf("");
+            }
+
+            fclose(fptr);
         }else{
-            printf("No Message Received:\n");
+            printf("\nNo Message Received:\n");
+            
         }
         
-        fclose(fptr);
-        
+               
         strcpy(command,"");//Ensures old command is not used during next cycle
         strcpy(text,""); //Ensures old message is not shown
 
-
-        //Print messages written to file
-        printMessages();
-        
         getInput();   
     }
 
@@ -285,6 +288,12 @@ void registerUser(){
     if(recvSvrMessage()==0){
         decodeMessage();
         printf("\nMessage Received: %s\n \n",text);
+
+        if(strcmp(text,"Name already exists")==0){ //Names must be unique
+            printf("Restart app and use a different name\n");
+            close(sock_send);
+            exit(0);
+        }
     }else{
         printf("\nError, no response from server\n");
         close(sock_send);

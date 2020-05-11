@@ -113,7 +113,7 @@ int main(int argc, char *argv[]){
 
                     for(int j=0; j<10; j++){// Check if name already exists
                             if(strcmp(userList[j].name,text) ==0){
-                                strcpy(test,"Name already exists\n");
+                                strcpy(test,"Name already exists");
                                 break;
                             }    
                     }
@@ -140,6 +140,12 @@ int main(int argc, char *argv[]){
                     
                 }
 
+                if(strcmp(command,"NotificationRequest")==0){
+                    strcpy(command,"NotificationReply");
+                    strcpy(text,"Do nothing");
+                    sendMessage();
+                }
+
                 if (strcmp(command,"ViewAllContacts")==0){
                 
                     strcpy(text,"\n\nList of Users: \n");//Ensure string is blank
@@ -151,7 +157,7 @@ int main(int argc, char *argv[]){
 
                 if (strcmp(command,"CancelRequest")==0){
                     strcpy(command,"Display");
-                    strcpy(text,"Request Cancelled\n");
+                    strcpy(text,"Request Cancelled");
                     sendMessage();
                 }
 
@@ -164,13 +170,13 @@ int main(int argc, char *argv[]){
                             if(strcmp(userList[x].name,name)==0){ // "name" stores name of client
                                 userList[x].WorkGroup=true;
                                 userFound=true;
-                                strcpy(text,"Group request successful\n");
+                                strcpy(text,"Group request successful");
                                 sendMessage(); //Sends string stored in text variable
                                 break; //Dont bother checking the others
                             }
                         }
                         if(userFound==false){
-                            strcpy(text,"Request unsucessful\n");
+                            strcpy(text,"Request unsucessful");
                             sendMessage();
                         }
                     }
@@ -181,13 +187,13 @@ int main(int argc, char *argv[]){
                             if(strcmp(userList[x].name,name)==0){ // "name" stores name of client
                                 userList[x].FunGroup=true;
                                 userFound=true;
-                                strcpy(text,"Group request successful\n");
+                                strcpy(text,"Group request successful");
                                 sendMessage(); //Sends string stored in text variable
                                 break; //Dont bother checking the others
                             }
                         }
                         if(userFound==false){
-                            strcpy(text,"Request unsucessful\n");
+                            strcpy(text,"Request unsucessful");
                             sendMessage();
                         }
                     }
@@ -208,7 +214,7 @@ int main(int argc, char *argv[]){
 
                     if(userFound){
                         strcpy(test,text);// test temporarily holds the message to be sent
-                        strcpy(text,"FunGroup Broadcast sent\n");
+                        strcpy(text,"FunGroup Broadcast sent");
                         strcpy(command,"Display");
                         sendMessage(); //Send confirmation back to client
 
@@ -228,7 +234,7 @@ int main(int argc, char *argv[]){
                         }
 
                     }else{
-                        strcpy(text,"You must be a member before you broadcast.\n");
+                        strcpy(text,"You must be a member before you broadcast.");
                         sendMessage();
                     }
                     
@@ -247,7 +253,7 @@ int main(int argc, char *argv[]){
 
                     if(userFound){
                         strcpy(test,text);// test temporarily holds the message to be sent
-                        strcpy(text,"WorkGroup Broadcast sent\n");
+                        strcpy(text,"WorkGroup Broadcast sent");
                         strcpy(command,"Display");
                         sendMessage(); //Send confirmation
 
@@ -266,7 +272,7 @@ int main(int argc, char *argv[]){
                         }
 
                     }else{
-                        strcpy(text,"You must be a member before you broadcast.\n");
+                        strcpy(text,"You must be a member before you broadcast.");
                         sendMessage();
                     }
                     

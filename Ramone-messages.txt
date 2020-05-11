@@ -1,6 +1,0 @@
-Message Received: Group request successful
-
-Message Received: 
-Available Users:
-1: Orlando
-2: Ramone
