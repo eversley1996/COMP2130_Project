@@ -10,7 +10,6 @@
         -https://flaviocopes.com/c-return-string/
         -Code downloaded from ourvle
 
-
 */
 #include <stdio.h>
 #include <sys/types.h>
@@ -41,16 +40,13 @@ void chatMenu();
 
 int			sock_send,option;
 struct sockaddr_in	addr_send,my_addr;
-char			text[BUF_SIZE],src_ip[30],buf[BUF_SIZE],filename[50];
+char			text[BUF_SIZE],src_ip[30],buf[BUF_SIZE],filename[70];
 int			send_len,bytes_sent,bytes_recv, recv_len;
-char userName[30], command[30],name[30];
+char userName[50], command[50],name[50],recpName[50];
 int select_ret;
 fd_set readfds;
 char textReply[BUF_SIZE], message[200];
 FILE *fptr;
-
-
-
         
 int main(int argc, char *argv[]){
 
@@ -97,6 +93,7 @@ int main(int argc, char *argv[]){
                 strcpy(text,"shutdown");
                 strcpy(command,"Display");
                 strcpy(name,userName);
+                strcpy(recpName,userName);
                 sendSvrMessage();
                 printf("Goodbye !\n");
                 close(sock_send);
@@ -106,6 +103,7 @@ int main(int argc, char *argv[]){
                 strcpy(command,"ViewAllContacts");
                 strcpy(text,userName);
                 strcpy(name,userName);
+                strcpy(recpName,userName);
                 sendSvrMessage();
                 break;
             case 3:
@@ -115,11 +113,13 @@ int main(int argc, char *argv[]){
                     strcpy(command,"JoinGroup");
                     strcpy(text,"FunGroup");
                     strcpy(name,userName);
+                    strcpy(recpName,userName);
                     sendSvrMessage();
                 }else{
                     strcpy(command,"CancelRequest");
                     strcpy(text,"Cancel Request");
                     strcpy(name,userName);
+                    strcpy(recpName,userName);
                     sendSvrMessage();
                 }
                 break;
@@ -131,11 +131,13 @@ int main(int argc, char *argv[]){
                     strcpy(command,"JoinGroup");
                     strcpy(text,"WorkGroup");
                     strcpy(name,userName);
+                    strcpy(recpName,userName);
                     sendSvrMessage();
                 }else{
                     strcpy(command,"CancelRequest");
                     strcpy(text,"Cancel Request");
                     strcpy(name,userName);
+                    strcpy(recpName,userName);
                     sendSvrMessage();
                 }
                 break;
@@ -146,6 +148,7 @@ int main(int argc, char *argv[]){
                 strcpy(command,"FunGroupBroadcast");
                 strcpy(text,textReply);
                 strcpy(name,userName);
+                strcpy(recpName,userName);
                 sendSvrMessage();
                 break;
             case 6:
@@ -155,6 +158,7 @@ int main(int argc, char *argv[]){
                 strcpy(command,"WorkGroupBroadcast");
                 strcpy(text,textReply);
                 strcpy(name,userName);
+                strcpy(recpName,userName);
                 sendSvrMessage();
                 break;
             case 7:
@@ -165,12 +169,12 @@ int main(int argc, char *argv[]){
                 strcpy(command,"NotificationRequest");
                 strcpy(text,"NotificationRequest");
                 strcpy(name,userName);
+                strcpy(recpName,userName);
                 sendSvrMessage();
                 break;
             default:
                 printf("Incorrect option given !\n");
                 close(sock_send);
-                fclose(fptr);
                 exit(0);
                 break;
         }
@@ -198,7 +202,7 @@ int main(int argc, char *argv[]){
             }
 
             if(strcmp(command,"WorkGroupBroadcast") ==0){
-                fprintf(fptr,"WorkGroup Broadcast: %s\n",text);
+                fprintf(fptr,"\nWorkGroup Broadcast: %s\n",text);
                 printf("\nWorkGroup Broadcast: %s\n",text);
             }
 
@@ -251,16 +255,18 @@ int recvSvrMessage(){ //Return 1 if no message was received
     }
 }
 
-// Message format: command-message-name
+// Message format: command-message-name-receipientname
 int encodeMessage(){
     strcpy(buf,command);
     strcat(buf,DELIMITER);
     strcat(buf,text);
     strcat(buf,DELIMITER);
     strcat(buf,name);
+    strcat(buf,DELIMITER);
+    strcat(buf,recpName);
     
 
-    return (strlen(command) + strlen(text) + strlen(name)+(strlen(DELIMITER) * 3)); //Return length of string to be sent
+    return (strlen(command) + strlen(text) + strlen(name) + strlen(recpName) +(strlen(DELIMITER) * 3)); //Return length of string to be sent
 }
 
 //Message format: command-message
@@ -283,6 +289,7 @@ void registerUser(){
     strcpy(command,"Register");
     strcpy(text,userName);
     strcpy(name,userName);
+    strcpy(recpName,userName);
     sendSvrMessage();
 
     if(recvSvrMessage()==0){
@@ -311,7 +318,8 @@ void printMessages(){
     /*while(fgets(message,sizeof(message),fptr)){//Check for end of file
         printf("\n%s\n",message);
     }*/
-    printf("\n****Notifications:****\n");
+
+    printf("\n****Notifications:****");
     while(fgets(message, sizeof(message), fptr) != NULL) {
         fputs("\n",stdout);
         fputs(message, stdout);
@@ -322,4 +330,7 @@ void printMessages(){
 
 void chatMenu(){
     //Write code to handle chatting
+    printf("Enter the name of the person to chat with => ");
+    scanf("%s",&textReply);
+
 }

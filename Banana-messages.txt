@@ -1,3 +1,0 @@
-
-Message Received: Group request successful
-WorkGroup Broadcast: You must be a member before you broadcast.

@@ -55,7 +55,7 @@ struct timeval		timeout={0,0};
 int			incoming_len;
 struct sockaddr_in	remote_addr;
 int			recv_msg_size;
-char		buf[BUF_SIZE], text[1024],test[1024], command[30], name[50];
+char		buf[BUF_SIZE], text[1024],test[1024], command[50], name[50],recpName[50];
 int			select_ret, user_index;
 bool userFound;
 FILE *fptr;
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]){
         FD_SET(sock_recv,&readfds);	/* add socket to listen to */
 
         printf("\nServer listening...\n");
-        active_fd_set=readfds;
+        active_fd_set=readfds;// This will be destroyed, hence the need to copy it
         
         select_ret=select(sock_recv+1,&active_fd_set,NULL,NULL,NULL);
         
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]){
     
             if (select_ret > 0){/* anything arrive on any socket? */
                 recvMessage();
-                decodeMessage(); //Get the message and the command
+                decodeMessage(); //Get the message tokens
 
                 if (strcmp(text,"shutdown") == 0)
                     break;
@@ -234,6 +234,7 @@ int main(int argc, char *argv[]){
                         }
 
                     }else{
+                        strcpy(command,"Display");
                         strcpy(text,"You must be a member before you broadcast.");
                         sendMessage();
                     }
@@ -263,8 +264,9 @@ int main(int argc, char *argv[]){
                         strcat(text,": ");
                         strcat(text,test);
                         strcpy(command,"WorkGroupBroadcast");
+
                         for(int j=0; j<10; j++){
-                            if(userList[j].FunGroup == true){
+                            if(userList[j].WorkGroup == true){
                                 send_len = encodeMessage();
                                 //Send to each user socket 
                                 sent_msg=sendto(sock_recv, buf, send_len, 0,(struct sockaddr *) &userList[j].socket, sizeof(userList[j].socket));
@@ -272,16 +274,53 @@ int main(int argc, char *argv[]){
                         }
 
                     }else{
+                        strcpy(command,"Display");
                         strcpy(text,"You must be a member before you broadcast.");
                         sendMessage();
                     }
                     
-
                 }
 
+                //CHECK FOR OTHER COMMANDS HERE
+
+                if (strcmp(command,"ChatRequest")==0){
+                    userFound=false;
+
+                    for(int j=0; j<10; j++){
+                        //Write code here
+                        if(strcmp(userList[j].name,recpName)==0){
+                            userFound=true;
+                            strcpy(command,"ChatRequest");
+                            strcpy(text, name);
+                            send_len = encodeMessage();
+                            //Send to each user socket 
+                            sent_msg=sendto(sock_recv, buf, send_len, 0,(struct sockaddr *) &userList[j].socket, sizeof(userList[j].socket));
+                            
+                            //strcpy(command,"Display");
+            
+                            printf("Request sent to client....\n");
+                            break; //Stop searching once client is found
+                            
+                        }
+                    }
+
+                    if (!userFound){
+                        strcpy(command,"ChatRequest");
+                        strcpy(text,"User not found");
+                        sendMessage();
+                    }
+                }
+
+                if(strcmp(command,"ChatRequestAccepted")==0){
+                    //recpName name of client to send to
+                }
+
+                //ChatWith
 
 
-                //CHECK FOR OThER COMMANDS HERE
+
+
+
 
             }            
         } 
@@ -310,11 +349,12 @@ void sendMessage(){
     sent_msg=sendto(sock_recv, buf, send_len, 0,(struct sockaddr *) &remote_addr, sizeof(remote_addr));
 }
 
-//Format: command-message
+//Format: command-message-sendername-receivername
 void decodeMessage(){
     strcpy(command,strtok(buf, DELIMITER));      /* Get the command (first message)*/
     strcpy(text,strtok(NULL, DELIMITER));    /* Get the message*/
-    strcpy(name,strtok(NULL, DELIMITER)); /*Get the name of recipient*/
+    strcpy(name,strtok(NULL, DELIMITER)); /*Get the name of sender*/
+    strcpy(recpName,strtok(NULL,DELIMITER)); /* Get name of the recipient */
 }
 
 //Format: command-message
@@ -323,7 +363,7 @@ int encodeMessage(){
     strcat(buf,DELIMITER);
     strcat(buf,text);
 
-    return (strlen(command) + strlen(text) + (strlen(DELIMITER) * 3)); //Return length of string to be sent
+    return (strlen(command) + strlen(text) + (strlen(DELIMITER) * 2)); //Return length of string to be sent
 }
 
 int newUserPosition(){
