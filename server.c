@@ -313,11 +313,54 @@ int main(int argc, char *argv[]){
 
                 if(strcmp(command,"ChatRequestAccepted")==0){
                     //recpName name of client to send to
+                    for(int x=0;x<10;x++){
+                        if(strcmp(userList[x].name,recpName)==0){
+                            strcpy(command,"ChatRequestAccepted");
+                            strcpy(text,name);
+                            send_len = encodeMessage();
+                            //Send to each user socket 
+                            sent_msg=sendto(sock_recv, buf, send_len, 0,(struct sockaddr *) &userList[x].socket, sizeof(userList[x].socket));
+                        }
+                    }
                 }
 
                 //ChatWith
+                if(strcmp(command,"ChatWith")==0){
+                    strcpy(command,"ChatWith");
+                    strcpy(command,text);
+
+                    userFound=false;
+                    for(int x=0; x<10; x++){
+                        if(strcmp(userList[x].name,recpName)==0){
+                            send_len = encodeMessage();//Send to user socket with mactching name
+                            sent_msg=sendto(sock_recv, buf, send_len, 0,(struct sockaddr *) &userList[x].socket, sizeof(userList[x].socket));
+                            userFound=true;
+                            break; //Stop loop once user found
+                        }
+                        
+                    }
+
+                    if(!userFound){
+                        strcpy(command,"ChatWith");
+                        strcpy(text,"Error! User not found");
+                        sendMessage();
+                    }
+                    
+                }
 
 
+                if(strcmp(command,"ChatRequestDeclined")==0){
+                    //recpName name of client to send to
+                    for(int x=0;x<10;x++){
+                        if(strcmp(userList[x].name,recpName)==0){
+                            strcpy(command,"ChatRequestDeclined");
+                            strcpy(text,name);
+                            send_len = encodeMessage();
+                            //Send to each user socket 
+                            sent_msg=sendto(sock_recv, buf, send_len, 0,(struct sockaddr *) &userList[x].socket, sizeof(userList[x].socket));
+                        }
+                    }
+                }
 
 
 
