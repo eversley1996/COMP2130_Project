@@ -381,7 +381,7 @@ int chatMenu(){
             scanf("%s",msg);
             if(strcmp(msg,"Quit")==0){
                 fclose(fp);
-                return 1;
+                break;
             }
             strcpy(recpName,recverName);
             strcpy(command,"ChatWith");
@@ -403,7 +403,7 @@ int chatMenu(){
                 scanf("%s",msg);
                 if(strcmp(msg,"Quit")==0){
                     fclose(fp);
-                    return 1;
+                    break;
                 }
                 strcpy(recpName,recverName);
                 strcpy(command,"ChatWith");
@@ -418,7 +418,7 @@ int chatMenu(){
                 if(strcmp(text,"Error! User not found")){
                     printf("\n%s\n",text);
                     fclose(fp);
-                    return 1;
+                    break;
                 }
 
                 /*
