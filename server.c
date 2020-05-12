@@ -103,8 +103,19 @@ int main(int argc, char *argv[]){
                 recvMessage();
                 decodeMessage(); //Get the message tokens
 
-                if (strcmp(text,"shutdown") == 0)
-                    break;
+                if (strcmp(command,"QuitApp") == 0){
+                    for(int i=0; i<10; i++){
+                        //Remove user from list
+                        if(strcmp(name,userList[i].name)==0){
+                            strcpy(userList[i].name,"");
+                            strcpy(userList[i].ip,"");
+                            userList[i].FunGroup=false;
+                            userList[i].WorkGroup=false;
+                            break;
+                        }
+                    }
+                    printf("\nUser: %s logged off\n",name);
+                }
 
                 if (strcmp(command,"Register")==0){ 
                     //write code to register name stored in "text"
@@ -147,9 +158,8 @@ int main(int argc, char *argv[]){
                 }
 
                 if (strcmp(command,"ViewAllContacts")==0){
-                
-                    strcpy(text,"\n\nList of Users: \n");//Ensure string is blank
-                    viewAllUsers(text);
+            
+                    viewAllUsers(text);//This function will put the names of all clients in the text variable
                     strcpy(command,"Display");
                     sendMessage();
 
@@ -199,6 +209,46 @@ int main(int argc, char *argv[]){
                     }
                     
                 
+                }
+
+                if((strcmp(command,"LeaveGroup")==0) && (strcmp(text,"FunGroup")==0)){
+                    userFound=false;
+                    strcpy(command,"Display");
+                    for(int x=0; x<10;x++){
+                        if (strcmp(name,userList[x].name)==0){
+                            userFound=true;
+                            userList[x].FunGroup=false;
+                            strcpy(text,"FunGroup leave request successful");
+                            sendMessage();
+                            break;
+                        }
+                    }
+
+                    if(!userFound){
+                        strcpy(text,"FunGroup leave request unsuccessful");
+                        sendMessage();
+                    }
+
+                }
+
+                if((strcmp(command,"LeaveGroup")==0) && (strcmp(text,"WorkGroup")==0)){
+                    userFound=false;
+                    strcpy(command,"Display");
+                    for(int x=0; x<10;x++){
+                        if (strcmp(name,userList[x].name)==0){
+                            userFound=true;
+                            userList[x].WorkGroup=false;
+                            strcpy(text,"WorkGroup leave request successful");
+                            sendMessage();
+                            break;
+                        }
+                    }
+
+                    if(!userFound){
+                        strcpy(text,"WorkGroup leave request unsuccessful");
+                        sendMessage();
+                    }
+
                 }
 
                 
@@ -296,7 +346,11 @@ int main(int argc, char *argv[]){
                             //Send to each user socket 
                             sent_msg=sendto(sock_recv, buf, send_len, 0,(struct sockaddr *) &userList[j].socket, sizeof(userList[j].socket));
                             
-                            //strcpy(command,"Display");
+                            strcpy(command,"Display");
+                            strcpy(text,"Request Sent to ");
+                            strcat(text,recpName);
+
+                            sendMessage();
             
                             printf("Request sent to client....\n");
                             break; //Stop searching once client is found
@@ -335,6 +389,9 @@ int main(int argc, char *argv[]){
                             send_len = encodeMessage();//Send to user socket with mactching name
                             sent_msg=sendto(sock_recv, buf, send_len, 0,(struct sockaddr *) &userList[x].socket, sizeof(userList[x].socket));
                             userFound=true;
+                            strcpy(text,"Sent to ");
+                            strcat(text,recpName);
+                            sendMessage();
                             break; //Stop loop once user found
                         }
                         
@@ -422,10 +479,10 @@ void viewAllUsers(char *text){
 
     memset(text,0,sizeof(text)); //Ensure string is blank
     int number=1;
-    strcat(text,"\nAvailable Users:");
+    strcat(text,"\nAvailable Users:\n");
     for (i=0;i < 10; i++){
         if (strcmp(userList[i].ip, "") != 0){
-            sprintf(&text[strlen(text)], "\n%d: %s",number,userList[i].name);
+            sprintf(&text[strlen(text)], "\n%d: %s\n",number,userList[i].name);
             number++;
         }
     }

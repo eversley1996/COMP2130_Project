@@ -82,7 +82,7 @@ int main(int argc, char *argv[]){
     //build filename
     strcat(filename,userName);
     strcat(filename,DELIMITER);
-    strcat(filename,"messages.txt");
+    strcat(filename,"notifications.txt");
     
     getInput();
     bool skip=false;
@@ -90,8 +90,8 @@ int main(int argc, char *argv[]){
         
         switch(option){
             case 1:
-                strcpy(text,"shutdown");
-                strcpy(command,"Display");
+                strcpy(text,"Logout");
+                strcpy(command,"QuitApp");
                 strcpy(name,userName);
                 strcpy(recpName,userName);
                 sendSvrMessage();
@@ -173,6 +173,40 @@ int main(int argc, char *argv[]){
                 strcpy(recpName,userName);
                 sendSvrMessage();
                 break;
+            case 9:
+                printf("Are you sure you want to LEAVE FunGroup? (yes/no) =>");
+                scanf("%s",&textReply);
+                if(strcmp(textReply,"yes")==0){
+                    strcpy(command,"LeaveGroup");
+                    strcpy(text,"FunGroup");
+                    strcpy(name,userName);
+                    strcpy(recpName,userName);
+                    sendSvrMessage();
+                }else{
+                    strcpy(command,"CancelRequest");
+                    strcpy(text,"Cancel Request");
+                    strcpy(name,userName);
+                    strcpy(recpName,userName);
+                    sendSvrMessage();
+                }
+                break;
+            case 10:
+                printf("Are you sure you want to LEAVE WorkGroup? (yes/no) =>");
+                scanf("%s",&textReply);
+                if(strcmp(textReply,"yes")==0){
+                    strcpy(command,"LeaveGroup");
+                    strcpy(text,"WorkGroup");
+                    strcpy(name,userName);
+                    strcpy(recpName,userName);
+                    sendSvrMessage();
+                }else{
+                    strcpy(command,"CancelRequest");
+                    strcpy(text,"Cancel Request");
+                    strcpy(name,userName);
+                    strcpy(recpName,userName);
+                    sendSvrMessage();
+                }
+                break;
             default:
                 printf("Incorrect option given !\n");
                 close(sock_send);
@@ -220,9 +254,7 @@ int main(int argc, char *argv[]){
             skip=false;
             
         }
-        
-        
-               
+         
         strcpy(command,"");//Ensures old command is not used during next cycle
         strcpy(text,""); //Ensures old message is not shown
 
@@ -234,6 +266,7 @@ int main(int argc, char *argv[]){
 void displayMenu(){
     printf("\n1: Exit App \n2: View Contacts\n3: Join FunGroup\n4: Join Workgroup\n");
     printf("5: Send FunGroup Broadcast\n6: Send WorkGroup Broadcast\n7: Chat with someone\n8: Display Notifications\n");
+    printf("9: Leave FunGroup\n10: Leave WorkGroup\n");
 }
 
 void getInput(){
@@ -341,6 +374,8 @@ int chatMenu(){
     char recverName[50];
     char msg[200];
 
+    
+
     printf("Enter the name of the person to chat with => ");
     scanf("%s",&textReply);
     strcpy(command,"ChatRequest");
@@ -352,57 +387,37 @@ int chatMenu(){
 
     bool finished=false;// Turns true if the user finished chatting
 
-    while(finished==false){
+    while(!finished){
 
-        recvSvrMessage();
-        decodeMessage();
-
-
-        if (strcmp(command,"ChatRequestAccepted")==0){
-            //name is the name of the person to chat with
-            //write code to chat with the person
-            printf("\nChat request accepted from %s\n",text);
-            strcpy(recverName,text);
-
-            if((fp=fopen(file_name,"a"))==NULL){ //File for saving chat history
-                printf("File Error \n");
-                close(sock_send);
-                exit(0);
-            }
-
-            strcat(file_name,userName);
-            strcat(file_name,"ChatWith");
-            strcat(file_name,text);
-            strcat(file_name,".txt");
-
-            //Continuously send and recv and store to file
-            printf("\nEnter a message or \"Quit\" to stop => ");
-            //scanf("%*[^\n]%*c",msg);
-            scanf("%s",msg);
-            if(strcmp(msg,"Quit")==0){
-                fclose(fp);
-                break;
-            }
-            strcpy(recpName,recverName);
-            strcpy(command,"ChatWith");
-            strcpy(name,userName);
-            strcpy(text,msg);
-            fprintf(fp,"You: %s\n",msg);//Save to file
-            sendSvrMessage();
-
-            recvSvrMessage();
+        if(recvSvrMessage()==0){
             decodeMessage();
-            
-            while((strcmp(msg,"Quit") !=0) && (strcmp(command,"ChatWith")==0)){
-                printf("\n%s\n",text);
-                fprintf(fp,"%s: \n",recverName);
 
+            if (strcmp(command,"ChatRequestAccepted")==0){ //ChatWith command can only be used by client if chat request accepted
+                //name is the name of the person to chat with
+                //write code to chat with the person
+                
+                strcat(file_name,userName);
+                strcat(file_name,"ChatWith");
+                strcat(file_name,text);
+                strcat(file_name,".txt");
+
+                if((fp=fopen(file_name,"a")) == NULL){ // File for storing chat history
+                        printf("File error! \n");
+                        close(sock_send);
+                        exit(0);
+                }
+
+                printf("\nChat request accepted from %s\n",text);
+                strcpy(recverName,text);
+
+            
                 //Continuously send and recv and store to file
                 printf("\nEnter a message or \"Quit\" to stop => ");
                 //scanf("%*[^\n]%*c",msg);
-                scanf("%s",msg);
+                scanf("%s",&msg);
                 if(strcmp(msg,"Quit")==0){
                     fclose(fp);
+                    finished=true;
                     break;
                 }
                 strcpy(recpName,recverName);
@@ -412,56 +427,75 @@ int chatMenu(){
                 fprintf(fp,"You: %s\n",msg);//Save to file
                 sendSvrMessage();
 
-                recvSvrMessage();
-                decodeMessage();
+                if(recvSvrMessage()==0){
+                    decodeMessage();
+                
+                    //while((strcmp(msg,"Quit") !=0) && (strcmp(command,"ChatWith")==0)){
+                    if (strcmp(command,"ChatWith")==0){// TEST THIS WHEN YOU GET BACK
+                        printf("\n%s\n",text);
+                        fprintf(fp,"%s: \n",recverName);
 
-                if(strcmp(text,"Error! User not found")){
-                    printf("\n%s\n",text);
+                        //Continuously send and recv and store to file
+                        printf("\nEnter a message or \"Quit\" to stop => ");
+                        //scanf("%*[^\n]%*c",msg);
+                        scanf("%s",&msg);
+                        if(strcmp(msg,"Quit")==0){
+                            fclose(fp);
+                            finished=true;// This will stop the while loop
+                            break;
+                        }
+                        strcpy(recpName,recverName);
+                        strcpy(command,"ChatWith");
+                        strcpy(name,userName);
+                        strcpy(text,msg);
+                        fprintf(fp,"You: %s\n",msg);//Save to file
+                        sendSvrMessage();
+
+                        //recvSvrMessage();
+                        //decodeMessage();
+
+                        if(strcmp(text,"Error! User not found")){
+                            printf("\n%s\n",text);
+                            fclose(fp);
+                            break;
+                        }
+                    
+                    }
+
                     fclose(fp);
-                    break;
                 }
 
-                /*
-                if(strcmp(command,"ChatWith")==0){
-                    printf("\n%s\n",text);
-                    fprintf(fp,"%s: \n",recverName);
-                }else{
-                    break;
-                }
-                */
-            
-            } //Put this back if you face issues
-
-            fclose(fp);
-
-        }
-        
-
-        if(strcmp(command,"ChatRequestDeclined")==0){
-            printf("\n%s declined your request to chat\n",text);
-            return 1;
-        }
-
-        if(strcmp(command,"ChatRequest")==0){
-            printf("\nDo you want to accept request from %s? (yes/no) => \n",text);
-            scanf("%s",&textReply);
-
-            if(strcmp(textReply,"yes")==0){
-                strcpy(command,"ChatRequestAccepted");
-                strcpy(recpName,text);
-                strcpy(text,"Accept Chat Request");
-                strcpy(name,userName);
-                sendSvrMessage();
-            }else{
-                strcpy(command,"ChatRequestDeclined");
-                strcpy(recpName,text);
-                strcpy(text,"Decline Chat Request");
-                strcpy(name,userName);
-                sendSvrMessage();
             }
-            
+
+            if(strcmp(command,"ChatRequestDeclined")==0){
+                printf("\n%s declined your request to chat\n",text);
+                return 1;
+            }
+
+            if(strcmp(command,"ChatRequest")==0){
+                printf("\nDo you want to accept request from %s? (yes/no) => \n",text);
+                scanf("%s",&textReply);
+
+                if(strcmp(textReply,"yes")==0){
+                    strcpy(command,"ChatRequestAccepted");
+                    strcpy(recpName,text);
+                    strcpy(text,"Accept Chat Request");
+                    strcpy(name,userName);
+                    sendSvrMessage();
+                }else{
+                    strcpy(command,"ChatRequestDeclined");
+                    strcpy(recpName,text);
+                    strcpy(text,"Decline Chat Request");
+                    strcpy(name,userName);
+                    sendSvrMessage();
+                }
+                
+            }
+
+
         }
         
+    
     }
 
     return 0;
