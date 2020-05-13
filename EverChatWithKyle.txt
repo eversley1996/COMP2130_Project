@@ -1,0 +1,7 @@
+Kyle: Kyle
+You: gaza
+Kyle: yo
+You: hello
+Kyle: Sent to Kyle
+You: .
+Kyle: seen

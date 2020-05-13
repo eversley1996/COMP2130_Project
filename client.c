@@ -1,8 +1,8 @@
 /* 
     Eversley Francis - 620106294
-    Kyle Henry
-    Orlando Blagrove
-    Ramone Grantson
+    Kyle Henry - 620123958
+    Orlando Blagrove - 620082493
+    Ramone Grantson - 620078653
 
     Sources:
         -https://overiq.com/c-programming-101/the-sprintf-function-in-c/
@@ -10,13 +10,15 @@
         -https://flaviocopes.com/c-return-string/
         -Code downloaded from ourvle
 
+    Use localhost IPs such as 127.0.0.2 , 127.0.0.3, 127.0.0.4 etc...
+
 */
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <stdlib.h>	/* exit() warnings */
-#include <string.h>	/* memset warnings */
+#include <stdlib.h>
+#include <string.h>	
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/select.h>
@@ -30,7 +32,7 @@ void decodeMessage();
 int encodeMessage();
 void getInput();
 void registerUser();
-void printMessages();
+int printMessages();
 int chatMenu();
 
 #define BUF_SIZE	1024
@@ -51,7 +53,7 @@ FILE *fptr;
 int main(int argc, char *argv[]){
 
     if(argc < 2){
-        printf("Incorecct arguments given, please enter an IP to use\n");
+        printf("Incorecct arguments given, please only enter an IP to use. Example -> 127.0.0.2\n");
         exit(0);
     }
     strcpy(src_ip,argv[1]); //Get the IP from the command line
@@ -264,7 +266,7 @@ int main(int argc, char *argv[]){
 }
 
 void displayMenu(){
-    printf("\n1: Exit App \n2: View Contacts\n3: Join FunGroup\n4: Join Workgroup\n");
+    printf("\n1: Exit App \n2: View Users\n3: Join FunGroup\n4: Join Workgroup\n");
     printf("5: Send FunGroup Broadcast\n6: Send WorkGroup Broadcast\n7: Chat with someone\n8: Display Notifications\n");
     printf("9: Leave FunGroup\n10: Leave WorkGroup\n");
 }
@@ -347,11 +349,10 @@ void registerUser(){
     }
 }
 
-void printMessages(){
+int printMessages(){
     if((fptr=fopen(filename,"r"))==NULL){
         printf("Error opening file\n");
-        close(sock_send);
-        exit(0);
+        return 0;
     }
 
     /*while(fgets(message,sizeof(message),fptr)){//Check for end of file
@@ -365,6 +366,7 @@ void printMessages(){
     }
 
     fclose(fptr);
+    return 1;
 }
 
 int chatMenu(){
@@ -373,8 +375,8 @@ int chatMenu(){
     char file_name[50];
     char recverName[50];
     char msg[200];
-
-    
+    bool requestAccepted=false;
+    bool finished=false;// Turns true if the user finished chatting
 
     printf("Enter the name of the person to chat with => ");
     scanf("%s",&textReply);
@@ -385,7 +387,7 @@ int chatMenu(){
     sendSvrMessage();//Encode and send the message
     printf("Waiting for user to accept....\n");
 
-    bool finished=false;// Turns true if the user finished chatting
+    
 
     while(!finished){
 
@@ -401,7 +403,7 @@ int chatMenu(){
                 strcat(file_name,text);
                 strcat(file_name,".txt");
 
-                if((fp=fopen(file_name,"a")) == NULL){ // File for storing chat history
+                if((fp=fopen(file_name,"a")) == NULL){ // Open file for storing chat
                         printf("File error! \n");
                         close(sock_send);
                         exit(0);
@@ -410,13 +412,21 @@ int chatMenu(){
                 printf("\nChat request accepted from %s\n",text);
                 strcpy(recverName,text);
 
+                requestAccepted=true;
+
+            }
+
+            if((strcmp(command,"ChatWith")==0) || (requestAccepted==true)){
             
+                printf("\n%s: %s\n",recverName,text);
+                fprintf(fp,"%s: %s\n",recverName,text);
+
                 //Continuously send and recv and store to file
                 printf("\nEnter a message or \"Quit\" to stop => ");
-                //scanf("%*[^\n]%*c",msg);
+                //scanf("%*[^\n]%*c",&msg); TRYING TO READ ENTIRE LINE, NOT WORKING
                 scanf("%s",&msg);
+
                 if(strcmp(msg,"Quit")==0){
-                    fclose(fp);
                     finished=true;
                     break;
                 }
@@ -427,49 +437,12 @@ int chatMenu(){
                 fprintf(fp,"You: %s\n",msg);//Save to file
                 sendSvrMessage();
 
-                if(recvSvrMessage()==0){
-                    decodeMessage();
-                
-                    //while((strcmp(msg,"Quit") !=0) && (strcmp(command,"ChatWith")==0)){
-                    if (strcmp(command,"ChatWith")==0){// TEST THIS WHEN YOU GET BACK
-                        printf("\n%s\n",text);
-                        fprintf(fp,"%s: \n",recverName);
-
-                        //Continuously send and recv and store to file
-                        printf("\nEnter a message or \"Quit\" to stop => ");
-                        //scanf("%*[^\n]%*c",msg);
-                        scanf("%s",&msg);
-                        if(strcmp(msg,"Quit")==0){
-                            fclose(fp);
-                            finished=true;// This will stop the while loop
-                            break;
-                        }
-                        strcpy(recpName,recverName);
-                        strcpy(command,"ChatWith");
-                        strcpy(name,userName);
-                        strcpy(text,msg);
-                        fprintf(fp,"You: %s\n",msg);//Save to file
-                        sendSvrMessage();
-
-                        //recvSvrMessage();
-                        //decodeMessage();
-
-                        if(strcmp(text,"Error! User not found")){
-                            printf("\n%s\n",text);
-                            fclose(fp);
-                            break;
-                        }
-                    
-                    }
-
-                    fclose(fp);
-                }
-
             }
 
             if(strcmp(command,"ChatRequestDeclined")==0){
                 printf("\n%s declined your request to chat\n",text);
-                return 1;
+                finished=true;
+                break;
             }
 
             if(strcmp(command,"ChatRequest")==0){
@@ -497,6 +470,7 @@ int chatMenu(){
         
     
     }
+    fclose(fp);
 
     return 0;
     

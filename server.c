@@ -1,15 +1,14 @@
 /* 
     Eversley Francis - 620106294
-    Kyle Henry
-    Orlando Blagrove
-    Ramone Grantson
+    Kyle Henry - 620123958
+    Orlando Blagrove - 620082493
+    Ramone Grantson - 620078653
 
     Sources:
         -https://overiq.com/c-programming-101/the-sprintf-function-in-c/
         -https://www.geeksforgeeks.org/socket-programming-in-cc-handling-multiple-clients-on-server-without-multi-threading/
         -https://flaviocopes.com/c-return-string/
         -Code downloaded from ourvle
-
 
 */
 
@@ -418,9 +417,6 @@ int main(int argc, char *argv[]){
                         }
                     }
                 }
-
-
-
 
             }            
         } 

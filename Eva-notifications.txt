@@ -1,6 +1,0 @@
-
-Message Received: Group request successful
-
-Message Received: WorkGroup Broadcast sent
-
-WorkGroup Broadcast: Eva: hello
