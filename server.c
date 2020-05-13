@@ -85,6 +85,7 @@ int main(int argc, char *argv[]){
     FD_ZERO(&readfds);		/* zero out socket set */
     FD_SET(sock_recv,&readfds);	/* add socket to listen to */
     
+    
 
     /* listen ... */
     while (1){
@@ -97,6 +98,12 @@ int main(int argc, char *argv[]){
         select_ret=select(sock_recv+1,&active_fd_set,NULL,NULL,NULL);
         
         if(FD_ISSET(sock_recv,&active_fd_set)){
+
+            if((fptr=fopen("server-log.txt","a"))==NULL){
+                printf("File Error!\n");
+                close(sock_recv);
+                exit(0);
+            }
     
             if (select_ret > 0){/* anything arrive on any socket? */
                 recvMessage();
@@ -114,6 +121,7 @@ int main(int argc, char *argv[]){
                         }
                     }
                     printf("\nUser: %s logged off\n",name);
+                    fprintf(fptr,"User: %s logged off\n",name);
                 }
 
                 if (strcmp(command,"Register")==0){ 
@@ -418,11 +426,13 @@ int main(int argc, char *argv[]){
                     }
                 }
 
-            }            
+            }  
+            fclose(fptr);          
         } 
     }
 
     close(sock_recv);
+    fclose(fptr);
 
     return 0;
 }
@@ -433,6 +443,7 @@ const char* recvMessage(){
     if (recv_msg_size > 0){	/* what was sent? */
         buf[recv_msg_size]='\0';
         printf("From %s received: %s\n",inet_ntoa(remote_addr.sin_addr),buf);
+        fprintf(fptr,"%s\n",buf);
         return buf;
     }else{
         strcpy(buf,"");

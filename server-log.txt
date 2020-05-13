@@ -1,0 +1,10 @@
+Register-John-John-John
+ViewAllContacts-John-John-John
+NotificationRequest-NotificationRequest-John-John
+QuitApp-Logout-John-John
+User: John logged off
+Register-dennise-dennise-dennise
+JoinGroup-FunGroup-dennise-dennise
+ViewAllContacts-dennise-dennise-dennise
+QuitApp-Logout-dennise-dennise
+User: dennise logged off
